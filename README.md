@@ -2,7 +2,7 @@
 
 # Panevanta
 
-**[Download Panevanta 0.7 for Windows x64](https://github.com/Shalfey-Predskazatel/panevanta/releases/download/v0.7/Panevanta-0.7-Portable-win-x64.zip)** · [Release and SHA-256](https://github.com/Shalfey-Predskazatel/panevanta/releases/tag/v0.7) · [Русский](#русский)
+**[Download Panevanta 0.7 for Windows x64](https://github.com/Shalfey-Predskazatel/Panevanta/releases/download/v0.7/Panevanta-0.7-Portable-win-x64.zip)** · [Release and SHA-256](https://github.com/Shalfey-Predskazatel/Panevanta/releases/tag/v0.7) · [Русский](#русский)
 
 Panevanta captures a selected window or display and shows the processed image in an overlay. This release is a portable build for Windows x64.
 
