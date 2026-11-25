@@ -2,6 +2,8 @@
 
 Panevanta uses or bundles components from NVIDIA, Microsoft, .NET, and MSYS2. The portable release includes runtime components and license notices. The full recovery bundle has additional build-only tools and SDK files.
 
+The original Panevanta source code and build scripts are licensed under MIT; this does not replace or extend any third-party license. Product branding and artwork are not included in the MIT grant.
+
 - NVIDIA Video Effects SDK and Video Frame Generation are governed by NVIDIA license terms.
 - .NET Windows Desktop is distributed with the application. Microsoft notices are included in the full recovery bundle.
 - Microsoft Visual C++ runtime DLLs are distributed beside the application.

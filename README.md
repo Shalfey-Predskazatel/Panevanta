@@ -23,7 +23,9 @@ This repository includes the Panevanta 0.7 application sources, native engine so
 
 The 3.1 GB offline toolchain and SDK cache from the recovery bundle is not stored in GitHub. A rebuild needs the pinned .NET toolchain, MSYS2 CLANG64, CUDA headers, and a properly licensed NVIDIA Video Effects SDK. See [Building](docs/building.md) and [third-party notes](docs/third-party.md).
 
-The source is published for inspection. No reuse license is specified for the project code. Third-party components keep their own license terms.
+## License
+
+Original Panevanta source code and build scripts are licensed under the [MIT License](LICENSE). The license does not cover product names, logos, artwork, or third-party components. NVIDIA, Microsoft, .NET, CUDA, and other bundled or required components remain subject to their own terms; see [third-party notes](docs/third-party.md).
 
 ## Notes
 
