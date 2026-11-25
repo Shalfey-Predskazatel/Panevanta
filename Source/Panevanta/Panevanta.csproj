@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Panevanta</AssemblyName>
+    <Product>Panevanta</Product>
+    <Description>Real-time window and display enhancement</Description>
+    <Company>Shalfey Predskazatel</Company>
+    <Version>0.7.0</Version>
+    <ApplicationIcon>Assets/panevanta-icon.ico</ApplicationIcon>
+  </PropertyGroup>
+</Project>
