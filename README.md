@@ -21,6 +21,8 @@ This repository now includes the Panevanta 0.7 application sources, native engin
 
 The 3.1 GB offline toolchain and SDK cache from the recovery bundle is not stored in GitHub. A rebuild needs the pinned .NET toolchain, MSYS2 CLANG64, CUDA headers, and a properly licensed NVIDIA Video Effects SDK. See [Building](docs/building.md) and [third-party notes](docs/third-party.md).
 
+The source is published for inspection. No reuse license is specified for the project code. Third-party components keep their own license terms.
+
 ## Notes
 
 The overlay does not decode video or handle audio. Frame rate shown by the app represents capture or DXGI presentation, not necessarily the display's physical refresh rate or audio synchronization.
@@ -49,6 +51,8 @@ Panevanta захватывает выбранное окно или монито
 В репозитории есть исходный код Panevanta 0.7, нативного движка, скрипты сборки и документация. Откройте папку [Source](Source/) или скачайте [архив исходников](https://github.com/Shalfey-Predskazatel/Panevanta/releases/download/v0.7/Panevanta-0.7-Source.zip).
 
 Кэш офлайн-инструментов и SDK размером 3,1 ГБ из комплекта восстановления не загружается в GitHub. Для пересборки нужны зафиксированный .NET toolchain, MSYS2 CLANG64, заголовки CUDA и NVIDIA Video Effects SDK, полученный с соблюдением лицензии. См. [инструкцию по сборке](docs/building.ru.md) и [заметки о сторонних компонентах](docs/third-party.md).
+
+Исходный код доступен для ознакомления. Лицензия на повторное использование проекта не указана. Для сторонних компонентов действуют их собственные лицензии.
 
 ## Примечания
 
