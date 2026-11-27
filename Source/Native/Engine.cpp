@@ -324,9 +324,21 @@ class Engine {
     bool hdrInput, hdrFrames, hdrOutput;
     ComPtr<ID3D11Device> dev;
     ComPtr<ID3D11DeviceContext> ctx;
+    ComPtr<ID3D11Multithread> multi;
+    struct ContextGuard {
+        ID3D11Multithread* multi;
+        explicit ContextGuard(ID3D11Multithread* protection) : multi(protection) { multi->Enter(); }
+        ~ContextGuard() { multi->Leave(); }
+    };
     ComPtr<ID3D11Texture2D> normalized, processed, captureCopy;
     ComPtr<ID3D11RenderTargetView> inputRT, backRT;
     ComPtr<ID3D11ShaderResourceView> normalizedView, processedView, captureView;
+    struct InputBinding {
+        ComPtr<ID3D11Texture2D> texture;
+        ComPtr<ID3D11ShaderResourceView> view;
+    };
+    std::array<InputBinding, 3> inputBindings;
+    size_t nextInputBinding{};
     ComPtr<ID3D11VertexShader> vs;
     ComPtr<ID3D11PixelShader> normalize, present;
     ComPtr<ID3D11ComputeShader> pack;
@@ -408,13 +420,28 @@ class Engine {
         ctx->PSSetShaderResources(0, 2, empty);
     }
     void Prepare(ID3D11Texture2D* texture, Frame& dst) {
-        if (captureCopy) {
-            ctx->CopyResource(captureCopy.Get(), texture);
-        } else {
-            captureView.Reset();
-            hr(dev->CreateShaderResourceView(texture, nullptr, &captureView), "Capture shader view");
+        auto binding = std::find_if(inputBindings.begin(), inputBindings.end(),
+            [texture](const InputBinding& entry) { return entry.texture.Get() == texture; });
+        if (binding == inputBindings.end()) {
+            binding = inputBindings.begin() + nextInputBinding;
+            nextInputBinding = (nextInputBinding + 1) % inputBindings.size();
+            D3D11_TEXTURE2D_DESC source{};
+            texture->GetDesc(&source);
+            binding->view.Reset();
+            if (source.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+                hr(dev->CreateShaderResourceView(texture, nullptr, &binding->view), "Capture shader view");
+            } else if (!captureCopy) {
+                MakeTexture(source.Width, source.Height, source.Format, D3D11_BIND_SHADER_RESOURCE, &captureCopy);
+                hr(dev->CreateShaderResourceView(captureCopy.Get(), nullptr, &captureView), "Create capture view");
+            }
+            binding->texture = texture;
         }
-        Draw(inputRT.Get(), normalize.Get(), s.width, s.height, captureView.Get(), nullptr, Values(hdrInput, false));
+        auto* sourceView = binding->view.Get();
+        if (!sourceView) {
+            ctx->CopyResource(captureCopy.Get(), texture);
+            sourceView = captureView.Get();
+        }
+        Draw(inputRT.Get(), normalize.Get(), s.width, s.height, sourceView, nullptr, Values(hdrInput, false));
         if (processed) vpp.Run();
         auto* source = processed ? processedView.Get() : normalizedView.Get();
         ID3D11UnorderedAccessView* write = dst.write.Get();
@@ -434,6 +461,11 @@ class Engine {
     void RenderLoop() noexcept {
         try {
             SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+            constexpr DWORD highResolution = 0x00000002;
+            const std::unique_ptr<void, decltype(&CloseHandle)> timer(
+                CreateWaitableTimerExW(nullptr, nullptr, highResolution, TIMER_MODIFY_STATE | SYNCHRONIZE),
+                CloseHandle);
+            const auto precisionWindow = std::max<int64_t>(1, frequency / 5000);
             int64_t next = 0, lastSample = 0;
             int64_t rendered = 0, lastSequence = 0;
             const auto interval = frequency / (int64_t(s.fps) * s.factor);
@@ -450,6 +482,8 @@ class Engine {
                 const auto now = qpc();
                 if (!next || next < now - interval || group.sequence > lastSequence + 1)
                     next = now;
+                RECT size{};
+                GetClientRect(hwnd, &size);
                 for (int i = 0; i < group.count && !stopping; ++i) {
                     if (qpc() - group.captured > frequency / 5) {
                         drops += group.count - i;
@@ -459,14 +493,21 @@ class Engine {
                     while (!stopping) {
                         int64_t left = next - qpc();
                         if (left <= 0) break;
+                        if (timer && left > frequency / 1000) {
+                            LARGE_INTEGER due{};
+                            due.QuadPart = -std::max<int64_t>(1, (left - precisionWindow) * 10'000'000 / frequency);
+                            if (SetWaitableTimer(timer.get(), &due, 0, nullptr, nullptr, FALSE)
+                                && WaitForSingleObject(timer.get(), 100) == WAIT_OBJECT_0)
+                                continue;
+                        }
                         if (left > frequency / 400) Sleep(1);
                         else SwitchToThread();
                     }
                     if (stopping) break;
                     {
                         std::lock_guard lock(gpuMutex);
-                        RECT size{};
-                        GetClientRect(hwnd, &size);
+                        // NR shares this context. Protect the entire set-state/draw sequence.
+                        ContextGuard context(multi.Get());
                         if (size.right && size.bottom && (UINT(size.right) != displayWidth || UINT(size.bottom) != displayHeight))
                             Resize(size.right, size.bottom);
                         Draw(backRT.Get(), present.Get(), displayWidth, displayHeight,
@@ -518,7 +559,6 @@ public:
         if (!log) throw std::runtime_error("Could not open the render log");
         texture->GetDevice(&dev);
         dev->GetImmediateContext(&ctx);
-        ComPtr<ID3D11Multithread> multi;
         hr(ctx.As(&multi), "D3D11 multithread protection");
         multi->SetMultithreadProtected(TRUE);
         ComPtr<IDXGIDevice> dxgi;
@@ -549,12 +589,6 @@ public:
         constants.ByteWidth = sizeof(Config);
         constants.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         hr(dev->CreateBuffer(&constants, nullptr, &config), "Create shader constants");
-        D3D11_TEXTURE2D_DESC source{};
-        texture->GetDesc(&source);
-        if (!(source.BindFlags & D3D11_BIND_SHADER_RESOURCE)) {
-            MakeTexture(source.Width, source.Height, source.Format, D3D11_BIND_SHADER_RESOURCE, &captureCopy);
-            hr(dev->CreateShaderResourceView(captureCopy.Get(), nullptr, &captureView), "Create capture view");
-        }
         MakeTexture(s.width, s.height, hdrInput ? DXGI_FORMAT_R10G10B10A2_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM,
                     D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE, &normalized);
         hr(dev->CreateRenderTargetView(normalized.Get(), nullptr, &inputRT), "Normalize target");
@@ -608,6 +642,7 @@ public:
         }
         {
             std::lock_guard lock(gpuMutex);
+            ContextGuard context(multi.Get());
             Prepare(texture, pair[slot]);
             if (index != -1) {
                 auto& g = groups[index];

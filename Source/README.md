@@ -2,13 +2,11 @@
 
 **English** · [Русский](README.ru.md)
 
-This folder contains the Panevanta 0.7.0 managed application, native D3D11/CUDA engine, optional interop probe, build script, and app assets.
+This repository contains the source materials for Panevanta 0.9.7 and earlier development components.
 
-- Panevanta: the Windows desktop application.
-- Native: the D3D11, CUDA, RTX Video, and presentation engine.
-- Interop: a separate D3D12/CUDA experiment; it is not used by the released application.
-- Build-Panevanta.ps1: builds from a complete recovery bundle with the required dependency folders.
+- `Rust/` contains the current Windows application built with Rust, Tauri, and React.
+- `Native/` contains the Direct3D 11, CUDA, and NVIDIA Video Effects engine used by the current application.
+- `Panevanta/` contains the earlier managed application sources.
+- `Interop/` contains a separate interop experiment that is not part of the 0.9.7 portable release.
 
-The public repository does not contain the offline toolchain archive or NVIDIA SDK payload. Read [the build guide](../docs/building.md) before attempting a rebuild.
-
-The original Panevanta source code and build scripts are licensed under the [MIT License](../LICENSE). Product branding and third-party components are excluded; see [third-party notes](../docs/third-party.md).
+For the current application, see the [English build guide](Rust/README.md) or the [Russian detailed guide](Rust/README.ru.md). The source archive does not include the full offline toolchain or all NVIDIA SDK payloads. Review the licensing notes before obtaining or redistributing third-party components.
